@@ -82,21 +82,6 @@ void Settings::cycleParticleType()
     particleType = static_cast<ParticleType>((static_cast<int>(particleType) + 1) % 4);
 }
 
-void Settings::cycleSound()
-{
-    sound = !sound;
-}
-
-void Settings::cycleMusic()
-{
-    music = !music;
-}
-
-void Settings::cycleFullscreen()
-{
-    fullscreen = !fullscreen;
-}
-
 void Settings::cycleScreenShake()
 {
     screenshake = static_cast<ScreenShake>((static_cast<int>(screenshake) + 1) % 4);
