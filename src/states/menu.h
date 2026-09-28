@@ -6,7 +6,6 @@
  */
 #pragma once
 
-#include <array>
 #include <asw/asw.h>
 #include <time.h>
 #include <vector>
@@ -87,16 +86,11 @@ private:
     asw::ui::Checkbox* ui_sound { nullptr };
     asw::ui::Checkbox* ui_music { nullptr };
     asw::ui::Checkbox* ui_window { nullptr };
-    asw::ui::Button* ui_particle { nullptr };
-    asw::ui::Button* ui_screenshake { nullptr };
-    asw::ui::Button* ui_control { nullptr };
+    asw::ui::Choice* ui_particle { nullptr };
+    asw::ui::Choice* ui_screenshake { nullptr };
+    asw::ui::Choice* ui_control { nullptr };
     asw::ui::Button* ui_exit { nullptr };
     asw::ui::Button* ui_back { nullptr };
-
-    // Images for the options that cycle through more than two values
-    std::array<asw::Texture, 4> tex_particle;
-    std::array<asw::Texture, 4> tex_screenshake;
-    std::array<asw::Texture, 3> tex_control;
 
     // Music
     asw::Music music_mainmenu;

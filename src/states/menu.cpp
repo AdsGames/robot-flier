@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <format>
 #include <string>
+#include <vector>
 
 // Construct state
 void MenuScene::init()
@@ -83,8 +84,7 @@ void MenuScene::build_ui()
     // Image only buttons, fire on release
     auto add_button = [](asw::ui::Root& ui, const std::string& path, asw::Vec2<float> position) {
         auto& button = ui.root.add_child<asw::ui::Button>();
-        button.draw_background = false;
-        button.set_texture(load_texture(path), true);
+        button.set_images(load_texture(path));
         button.transform.position = position;
         return &button;
     };
@@ -93,22 +93,34 @@ void MenuScene::build_ui()
     auto add_toggle = [](asw::ui::Root& ui, const std::string& off, const std::string& on,
                           asw::Vec2<float> position) {
         auto& toggle = ui.root.add_child<asw::ui::Checkbox>();
-        toggle.set_texture(load_texture(off), true);
+        toggle.set_images(load_texture(off));
         toggle.texture_checked = load_texture(on);
         toggle.transform.position = position;
         return &toggle;
+    };
+
+    // Image options that move to the next value on click
+    auto add_choice = [](asw::ui::Root& ui, const std::vector<std::string>& paths,
+                          asw::Vec2<float> position) {
+        auto& choice = ui.root.add_child<asw::ui::Choice>();
+        for (const auto& path : paths) {
+            choice.images.push_back(load_texture(path));
+        }
+        choice.set_images(choice.images.front());
+        choice.transform.position = position;
+
+        // Options sit in a grid, so left and right move focus
+        choice.adjust_on_left_right = false;
+        return &choice;
     };
 
     menu_ui.ctx.navigation = controls::ui_navigation();
     options_ui.ctx.navigation = controls::ui_navigation();
 
     // Main menu, positions animate in update
-    menu_ui.set_size(S_W_F, S_H_F);
-    menu_ui.root.bg = asw::color::transparent;
-
-    // Start first so it holds focus by default
     start = add_button(menu_ui, "assets/images/gui/start.png", { 0, 400 });
     start->on_click = [this]() { start_game(); };
+    menu_ui.ctx.focus.default_focus = start;
 
     highscores_button = add_button(menu_ui, "assets/images/gui/highscores.png", { 0, 30 });
     highscores_button->on_click = [this]() { open_screen(MINISTATE_SCORES); };
@@ -125,9 +137,8 @@ void MenuScene::build_ui()
     ui_options = add_button(menu_ui, "assets/images/gui/ui_options.png", { 749, 0 });
     ui_options->on_click = [this]() { open_screen(MINISTATE_OPTIONS); };
 
-    // Options menu
-    options_ui.set_size(S_W_F, S_H_F);
-    options_ui.root.bg = asw::color::transparent;
+    // Options menu, back leaves it
+    options_ui.on_back = [this]() { open_screen(MINISTATE_MENU); };
 
     ui_sound = add_toggle(options_ui, "assets/images/gui/ui_sound_off.png",
         "assets/images/gui/ui_sound_on.png", { 120, 180 });
@@ -151,19 +162,25 @@ void MenuScene::build_ui()
     ui_exit = add_button(options_ui, "assets/images/gui/ui_exit.png", { 540, 180 });
     ui_exit->on_click = []() { asw::core::exit(); };
 
-    ui_control = add_button(options_ui, "assets/images/gui/ui_control_xbox.png", { 120, 295 });
-    ui_control->on_click = [this]() {
-        settings.cycleControlMode();
+    // Order matches ControlMode
+    ui_control = add_choice(options_ui,
+        { "assets/images/gui/ui_control_xbox.png", "assets/images/gui/ui_control_keyboard.png",
+            "assets/images/gui/ui_control_auto.png" },
+        { 120, 295 });
+    ui_control->on_change = [](std::size_t index) {
+        settings.controlMode = static_cast<ControlMode>(index);
         settings.save();
-        sync_options();
     };
 
-    ui_screenshake
-        = add_button(options_ui, "assets/images/gui/ui_screenshake_none.png", { 280, 295 });
-    ui_screenshake->on_click = [this]() {
-        settings.cycleScreenShake();
+    // Order matches ScreenShake
+    ui_screenshake = add_choice(options_ui,
+        { "assets/images/gui/ui_screenshake_none.png", "assets/images/gui/ui_screenshake_low.png",
+            "assets/images/gui/ui_screenshake_medium.png",
+            "assets/images/gui/ui_screenshake_high.png" },
+        { 280, 295 });
+    ui_screenshake->on_change = [](std::size_t index) {
+        settings.screenshake = static_cast<ScreenShake>(index);
         settings.save();
-        sync_options();
     };
 
     // The image shows the mode the button switches to
@@ -175,35 +192,18 @@ void MenuScene::build_ui()
         settings.applyFullscreen();
     };
 
-    ui_particle = add_button(options_ui, "assets/images/gui/ui_particle_circle.png", { 280, 407 });
-    ui_particle->on_click = [this]() {
-        settings.cycleParticleType();
+    // Order matches ParticleType
+    ui_particle = add_choice(options_ui,
+        { "assets/images/gui/ui_particle_circle.png", "assets/images/gui/ui_particle_square.png",
+            "assets/images/gui/ui_particle_pixel.png", "assets/images/gui/ui_particle_off.png" },
+        { 280, 407 });
+    ui_particle->on_change = [](std::size_t index) {
+        settings.particleType = static_cast<ParticleType>(index);
         settings.save();
-        sync_options();
     };
 
     ui_back = add_button(options_ui, "assets/images/gui/ui_back.png", { 540, 407 });
     ui_back->on_click = [this]() { open_screen(MINISTATE_MENU); };
-
-    tex_particle = {
-        load_texture("assets/images/gui/ui_particle_circle.png"),
-        load_texture("assets/images/gui/ui_particle_square.png"),
-        load_texture("assets/images/gui/ui_particle_pixel.png"),
-        load_texture("assets/images/gui/ui_particle_off.png"),
-    };
-
-    tex_screenshake = {
-        load_texture("assets/images/gui/ui_screenshake_none.png"),
-        load_texture("assets/images/gui/ui_screenshake_low.png"),
-        load_texture("assets/images/gui/ui_screenshake_medium.png"),
-        load_texture("assets/images/gui/ui_screenshake_high.png"),
-    };
-
-    tex_control = {
-        load_texture("assets/images/gui/ui_control_xbox.png"),
-        load_texture("assets/images/gui/ui_control_keyboard.png"),
-        load_texture("assets/images/gui/ui_control_auto.png"),
-    };
 }
 
 void MenuScene::sync_options()
@@ -211,9 +211,9 @@ void MenuScene::sync_options()
     ui_sound->checked = settings.sound;
     ui_music->checked = settings.music;
     ui_window->checked = settings.fullscreen;
-    ui_particle->texture = tex_particle.at(static_cast<size_t>(settings.particleType));
-    ui_screenshake->texture = tex_screenshake.at(static_cast<size_t>(settings.screenshake));
-    ui_control->texture = tex_control.at(static_cast<size_t>(settings.controlMode));
+    ui_particle->select(static_cast<std::size_t>(settings.particleType));
+    ui_screenshake->select(static_cast<std::size_t>(settings.screenshake));
+    ui_control->select(static_cast<std::size_t>(settings.controlMode));
 }
 
 void MenuScene::open_screen(int screen)

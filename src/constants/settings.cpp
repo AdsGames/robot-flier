@@ -76,18 +76,3 @@ void Settings::apply() const
     applyAudio();
     applyFullscreen();
 }
-
-void Settings::cycleParticleType()
-{
-    particleType = static_cast<ParticleType>((static_cast<int>(particleType) + 1) % 4);
-}
-
-void Settings::cycleScreenShake()
-{
-    screenshake = static_cast<ScreenShake>((static_cast<int>(screenshake) + 1) % 4);
-}
-
-void Settings::cycleControlMode()
-{
-    controlMode = static_cast<ControlMode>((static_cast<int>(controlMode) + 1) % 3);
-}
