@@ -1,6 +1,7 @@
 #include "settings.h"
 
 #include <asw/asw.h>
+#include <cstring>
 #include <fstream>
 
 Settings settings;

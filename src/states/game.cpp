@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include <cctype>
+#include <cmath>
 #include <format>
 #include <fstream>
 

@@ -1,5 +1,8 @@
 #include "menu.h"
 
+#include <algorithm>
+#include <format>
+
 // Construct state
 void MenuScene::init()
 {
