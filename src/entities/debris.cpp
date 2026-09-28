@@ -9,8 +9,8 @@ Debris::Debris(asw::Texture sprite, asw::Sample sound, const asw::Vec2<float>& p
     , motionMultiplier(motionMultiplier)
     , acceleration(acceleration)
     , damage(damage)
-    , sound(sound)
     , texture(sprite)
+    , sound(sound)
 {
     transform.position = position;
 

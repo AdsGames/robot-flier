@@ -18,7 +18,7 @@ public:
     // Override parent
     void init() override;
 
-    void update(float deltaTime) override
+    void update(float /*deltaTime*/) override
     {
         manager.set_next_scene(Scenes::Intro);
     }

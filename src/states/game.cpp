@@ -218,15 +218,15 @@ void GameScene::update(float deltaTime)
         // Lose scripts
         if (hectar.isOnGround()) {
             // Name input
-            if (score > highscores.getScore(9) && asw::input::keyboard.any_pressed) {
+            if (score > highscores.getScore(9) && asw::input::get_keyboard().any_pressed) {
                 // Last key pressed
-                int newkey = asw::input::keyboard.last_pressed;
+                int newkey = asw::input::get_keyboard().last_pressed;
 
                 // Letters
                 if (newkey >= SDL_SCANCODE_A && newkey <= SDL_SCANCODE_Z
                     && edittext.length() < 14) {
                     iter = edittext.insert(
-                        iter, newkey + 96 - (asw::input::keyboard.down[SDL_SCANCODE_LSHIFT] * 32));
+                        iter, newkey + 96 - (asw::input::get_keyboard().down[SDL_SCANCODE_LSHIFT] * 32));
                     ++iter;
                 }
                 // Numbers
@@ -326,17 +326,17 @@ void GameScene::update(float deltaTime)
 
         if (get_mouse_button_down(MouseButton::Left)) {
             // Quit game
-            if (quitQuad.contains(mouse.position)) {
-                asw::core::exit = true;
+            if (quitQuad.contains(get_mouse().position)) {
+                asw::core::exit();
             }
 
             // Menu
-            if (menuQuad.contains(mouse.position)) {
+            if (menuQuad.contains(get_mouse().position)) {
                 manager.set_next_scene(Scenes::Menu);
             }
 
             // Resume
-            if (resumeQuad.contains(mouse.position)) {
+            if (resumeQuad.contains(get_mouse().position)) {
                 paused = false;
             }
         }
@@ -455,9 +455,9 @@ void GameScene::draw()
             asw::Color(255, 255, 255));
         asw::draw::text(orbitron_12, std::format("Magnetic:{}", hectar.getMagneticTimer()),
             asw::Vec2<float>(120, 35), asw::Color(255, 255, 255));
-        asw::draw::text(orbitron_12, std::format("Mouse X:{}", mouse.position.x),
+        asw::draw::text(orbitron_12, std::format("Mouse X:{}", get_mouse().position.x),
             asw::Vec2<float>(120, 45), asw::Color(255, 255, 255));
-        asw::draw::text(orbitron_12, std::format("Mouse Y:{}", mouse.position.y),
+        asw::draw::text(orbitron_12, std::format("Mouse Y:{}", get_mouse().position.y),
             asw::Vec2<float>(120, 55), asw::Color(255, 255, 255));
         asw::draw::text(orbitron_12,
             std::format("Particles On:{}", static_cast<int>(settings.particleType)),
@@ -476,7 +476,7 @@ void GameScene::draw()
             asw::Vec2<float>(245, 65), asw::Color(255, 255, 255));
 
         // Column 4
-        asw::draw::text(orbitron_12, std::format("Last key:{}", keyboard.last_pressed),
+        asw::draw::text(orbitron_12, std::format("Last key:{}", get_keyboard().last_pressed),
             asw::Vec2<float>(360, 25), asw::Color(255, 255, 255));
         asw::draw::text(orbitron_12,
             std::format("Has highscore:{}", score > highscores.getScore(9)),

@@ -163,7 +163,7 @@ void MenuScene::update(float deltaTime)
     // Exit menus
     if (mini_screen == MINISTATE_TUTORIAL || mini_screen == MINISTATE_CREDITS
         || mini_screen == MINISTATE_CONTROLS || mini_screen == MINISTATE_SCORES) {
-        if (asw::input::keyboard.any_pressed
+        if (asw::input::get_keyboard().any_pressed
             || asw::input::get_mouse_button_down(asw::input::MouseButton::Left)
             || asw::input::get_controller_button_down(0, asw::input::ControllerButton::A)) {
             mini_screen = MINISTATE_MENU;
@@ -182,28 +182,28 @@ void MenuScene::update(float deltaTime)
         // Buttons
         if (asw::input::get_mouse_button_down(asw::input::MouseButton::Left)) {
             // Start game
-            if (start.transform.contains(asw::input::mouse.position)) {
+            if (start.transform.contains(asw::input::get_mouse().position)) {
                 startClicked = true;
                 animation_ticker = ANIMATION_DURATION;
             }
             // Scores
-            else if (highscores_button.transform.contains(asw::input::mouse.position)) {
+            else if (highscores_button.transform.contains(asw::input::get_mouse().position)) {
                 mini_screen = MINISTATE_SCORES;
             }
             // Credits menu
-            else if (ui_credits.transform.contains(asw::input::mouse.position)) {
+            else if (ui_credits.transform.contains(asw::input::get_mouse().position)) {
                 mini_screen = MINISTATE_CREDITS;
             }
             // Controls menu
-            else if (ui_controls.transform.contains(asw::input::mouse.position)) {
+            else if (ui_controls.transform.contains(asw::input::get_mouse().position)) {
                 mini_screen = MINISTATE_CONTROLS;
             }
             // Help screen
-            else if (ui_help.transform.contains(asw::input::mouse.position)) {
+            else if (ui_help.transform.contains(asw::input::get_mouse().position)) {
                 mini_screen = MINISTATE_TUTORIAL;
             }
             // Options menu
-            else if (ui_options.transform.contains(asw::input::mouse.position)) {
+            else if (ui_options.transform.contains(asw::input::get_mouse().position)) {
                 mini_screen = MINISTATE_OPTIONS;
             }
         }
@@ -213,18 +213,18 @@ void MenuScene::update(float deltaTime)
     if (mini_screen == MINISTATE_OPTIONS
         && asw::input::get_mouse_button_down(asw::input::MouseButton::Left)) {
         // Particles toggle
-        if (ui_particle[0].transform.contains(asw::input::mouse.position)) {
+        if (ui_particle[0].transform.contains(asw::input::get_mouse().position)) {
             settings.cycleParticleType();
             settings.save();
         }
         // Sound button toggle
-        else if (ui_sound[0].transform.contains(asw::input::mouse.position)) {
+        else if (ui_sound[0].transform.contains(asw::input::get_mouse().position)) {
             settings.cycleSound();
             settings.save();
             settings.applyAudio();
         }
         // Music button toggle
-        else if (ui_music[0].transform.contains(asw::input::mouse.position)) {
+        else if (ui_music[0].transform.contains(asw::input::get_mouse().position)) {
             settings.cycleMusic();
             settings.save();
             settings.applyAudio();
@@ -233,40 +233,40 @@ void MenuScene::update(float deltaTime)
             }
         }
         // Fullscreen toggle
-        else if (ui_window[0].transform.contains(asw::input::mouse.position)) {
+        else if (ui_window[0].transform.contains(asw::input::get_mouse().position)) {
             settings.cycleFullscreen();
             settings.save();
             settings.applyFullscreen();
         }
         // Screen shake
-        else if (ui_screenshake[0].transform.contains(asw::input::mouse.position)) {
+        else if (ui_screenshake[0].transform.contains(asw::input::get_mouse().position)) {
             settings.cycleScreenShake();
             settings.save();
         }
         // Control Toggle
-        else if (ui_control[0].transform.contains(asw::input::mouse.position)) {
+        else if (ui_control[0].transform.contains(asw::input::get_mouse().position)) {
             settings.cycleControlMode();
             settings.save();
         }
         // Power off
-        else if (ui_exit.transform.contains(asw::input::mouse.position)) {
-            asw::core::exit = true;
+        else if (ui_exit.transform.contains(asw::input::get_mouse().position)) {
+            asw::core::exit();
         }
         // Exit menu
-        else if (ui_back.transform.contains(asw::input::mouse.position)) {
+        else if (ui_back.transform.contains(asw::input::get_mouse().position)) {
             mini_screen = MINISTATE_MENU;
         }
     }
 
     // Update mouse particles
-    if (settings.particlesEnabled() && asw::input::mouse.change.y < 0) {
+    if (settings.particlesEnabled() && asw::input::get_mouse().change.y < 0) {
         emitter.set_emission_rate(200.0F);
     } else {
         emitter.set_emission_rate(0.0F);
     }
 
     // Update emitter
-    emitter.transform.position = asw::input::mouse.position;
+    emitter.transform.position = asw::input::get_mouse().position;
     emitter.update(deltaTime);
 }
 
@@ -356,9 +356,10 @@ void MenuScene::draw()
     if (settings.debug) {
         // Joystick testing
         if (asw::input::get_controller_count() > 0) {
-            for (auto i = 0; i < asw::input::controller[0].down.size(); i++) {
+            for (auto i = 0; i < asw::input::NUM_CONTROLLER_BUTTONS; i++) {
+                const auto button = static_cast<asw::input::ControllerButton>(i);
                 asw::draw::text(orbitron_12,
-                    std::format("Joystick {}: {}", i, asw::input::controller[0].down[i]),
+                    std::format("Joystick {}: {}", i, asw::input::get_controller_button(0, button)),
                     asw::Vec2<float>(120, 25 + (20 * i)), asw::Color(255, 255, 255));
             }
         }
