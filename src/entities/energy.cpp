@@ -35,10 +35,10 @@ void Energy::logic(const float motion, Robot* robot)
     }
 }
 
-void Energy::draw()
+void Energy::draw(const asw::Camera& camera) const
 {
     if (this->alive) {
-        asw::draw::sprite(texture, transform.position);
+        asw::draw::sprite(texture, camera.world_to_screen(transform.position));
     }
 }
 

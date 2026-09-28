@@ -79,11 +79,12 @@ private:
     // Our robot
     Robot hectar;
 
+    // Shakes the world, the HUD stays still
+    asw::Camera camera;
+
     // Declare integers
     float scroll;
     int themeNumber;
-    int screenshake_x;
-    int screenshake_y;
     float arrow_animation;
     float motion;
     float ticker;

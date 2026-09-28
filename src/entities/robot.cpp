@@ -161,45 +161,46 @@ void Robot::logic(float deltaTime)
 }
 
 // Draw
-void Robot::draw()
+void Robot::draw(const asw::Camera& camera)
 {
     // Draw robot sprite
     if (alive) {
         if (!rocket || settings.particlesEnabled()) {
             if (invincibleTimer > 0) {
-                asw::draw::sprite(robotInvincible, transform.position);
+                asw::draw::sprite(robotInvincible, camera.world_to_screen(transform.position));
             } else {
-                asw::draw::sprite(mainRobot, transform.position);
+                asw::draw::sprite(mainRobot, camera.world_to_screen(transform.position));
             }
         } else if (rocket && !settings.particlesEnabled()) {
             if (invincibleTimer > 0) {
-                asw::draw::sprite(robotInvincibleFire, transform.position);
+                asw::draw::sprite(robotInvincibleFire, camera.world_to_screen(transform.position));
             } else {
-                asw::draw::sprite(robotFire, transform.position);
+                asw::draw::sprite(robotFire, camera.world_to_screen(transform.position));
             }
         }
 
         // Xmas mode!
         if (settings.christmas) {
-            asw::draw::sprite(christmasHat, transform.position + asw::Vec2<float>(20, -12));
+            asw::draw::sprite(
+                christmasHat, camera.world_to_screen(transform.position + asw::Vec2<float>(20, -12)));
         }
     }
     // Death image
     else {
-        asw::draw::sprite(robotDie, transform.position);
+        asw::draw::sprite(robotDie, camera.world_to_screen(transform.position));
     }
 
     // Draw particles
-    emitter_smoke.draw();
-    emitter_left.draw();
-    emitter_right.draw();
+    emitter_smoke.draw(camera);
+    emitter_left.draw(camera);
+    emitter_right.draw(camera);
 }
 
 // Draw overlay
-void Robot::drawOverlay()
+void Robot::drawOverlay(const asw::Camera& camera)
 {
     if (alive && invincibleTimer > 0) {
-        asw::draw::sprite(robotInvincibleTop, transform.position);
+        asw::draw::sprite(robotInvincibleTop, camera.world_to_screen(transform.position));
     }
 }
 

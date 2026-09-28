@@ -17,8 +17,7 @@ void GameScene::init()
     scroll = 0;
     motion = 5;
     themeNumber = 0;
-    screenshake_x = 0;
-    screenshake_y = 0;
+    camera = asw::Camera(asw::Vec2<float>(S_W_F, S_H_F));
     arrow_animation = 0.0F;
     paused = false;
 
@@ -279,17 +278,18 @@ void GameScene::update(float deltaTime)
         asw::sound::play(sound_snap);
     }
 
-    // Screen shake
-    if (screenshake > 0 && settings.screenshakeMultiplier() != 0) {
-        const auto shake_amount = screenshake * settings.screenshakeMultiplier()
-            + 100 * static_cast<int>(settings.supershake);
-
-        screenshake_x = screenshake_y = asw::random::between(-shake_amount, shake_amount);
-        screenshake--;
+    // Screen shake, fades by the multiplier every frame at 60 fps
+    const auto shake_multiplier = static_cast<float>(settings.screenshakeMultiplier());
+    if (screenshake > 0 && shake_multiplier > 0 && hectar.isAlive()) {
+        camera.set_shake_decay(60.0F * shake_multiplier);
+        camera.shake(screenshake * shake_multiplier + (settings.supershake ? 100.0F : 0.0F));
     }
+    screenshake = 0;
 
-    if (screenshake <= 0 || !hectar.isAlive()) {
-        screenshake_x = screenshake_y = 0;
+    if (hectar.isAlive()) {
+        camera.update(deltaTime);
+    } else {
+        camera.snap_to(asw::Vec2<float>(S_W_F, S_H_F) / 2.0F);
     }
 
     // Random test stuff for devs
@@ -395,8 +395,8 @@ void GameScene::draw()
     using namespace asw::input;
 
     // Draw backgrounds and Ground Overlay
-    asw::draw::sprite(space, asw::Vec2<float>(scroll / 6, 0));
-    asw::draw::sprite(space, asw::Vec2<float>(scroll / 6 + SCREEN_W, 0));
+    asw::draw::sprite(space, camera.world_to_screen(asw::Vec2<float>(scroll / 6, 0)));
+    asw::draw::sprite(space, camera.world_to_screen(asw::Vec2<float>(scroll / 6 + SCREEN_W, 0)));
 
     // Draw HUD
     // Info
@@ -489,52 +489,56 @@ void GameScene::draw()
     const auto scroll_int = static_cast<int>(scroll);
 
     // Mountain Paralax
-    asw::draw::sprite(parallaxBack, asw::Vec2<float>((scroll_int / 3) % SCREEN_W, 0));
-    asw::draw::sprite(parallaxBack, asw::Vec2<float>((scroll_int / 3) % SCREEN_W + SCREEN_W, 0));
+    asw::draw::sprite(
+        parallaxBack, camera.world_to_screen(asw::Vec2<float>((scroll_int / 3) % SCREEN_W, 0)));
+    asw::draw::sprite(parallaxBack,
+        camera.world_to_screen(asw::Vec2<float>((scroll_int / 3) % SCREEN_W + SCREEN_W, 0)));
 
     // Ground
-    asw::draw::sprite(groundUnderlay, asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 40));
-    asw::draw::sprite(
-        groundUnderlay, asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 40));
+    asw::draw::sprite(groundUnderlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 40)));
+    asw::draw::sprite(groundUnderlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 40)));
 
     // Energy
     for (auto& energy : energys) {
-        energy.draw();
+        energy.draw(camera);
     }
 
     // Powerups
     for (auto& powerup : powerups) {
-        powerup.draw();
+        powerup.draw(camera);
     }
 
     // Draw robot
-    hectar.draw();
+    hectar.draw(camera);
 
     // Start arrow
     if (!hectar.hasBegun()) {
         if (asw::input::get_controller_count() > 0) {
             asw::draw::sprite(ui_a,
-                hectar.getTransform().position
-                    + asw::Vec2<float>(15, -60 - (sinf(arrow_animation) * 10)));
+                camera.world_to_screen(hectar.getTransform().position
+                    + asw::Vec2<float>(15, -60 - (sinf(arrow_animation) * 10))));
         } else {
             asw::draw::sprite(ui_up,
-                hectar.getTransform().position
-                    + asw::Vec2<float>(15, -70 - (sinf(arrow_animation) * 10)));
+                camera.world_to_screen(hectar.getTransform().position
+                    + asw::Vec2<float>(15, -70 - (sinf(arrow_animation) * 10))));
         }
     }
 
     // Debris
     for (auto& debris : debries) {
-        debris.draw();
+        debris.draw(camera);
     }
 
     // Ground underlay
-    asw::draw::sprite(groundOverlay, asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 20));
-    asw::draw::sprite(
-        groundOverlay, asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 20));
+    asw::draw::sprite(groundOverlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 20)));
+    asw::draw::sprite(groundOverlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 20)));
 
     // Robot above asteroids
-    hectar.drawOverlay();
+    hectar.drawOverlay(camera);
 
     // Lose scripts
     if (hectar.isOnGround()) {
