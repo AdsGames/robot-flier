@@ -45,6 +45,5 @@ void Energy::draw(const asw::Camera& camera) const
 // Move towards robot
 void Energy::moveTowards(const asw::Vec2<float>& target, const float speed)
 {
-    transform.position.x += (speed * (target.x - transform.position.x)) / 200.0F;
-    transform.position.y += (speed * (target.y - transform.position.y)) / 200.0F;
+    transform.position = asw::util::lerp(transform.position, target, speed / 200.0F);
 }

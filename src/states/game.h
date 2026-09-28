@@ -91,6 +91,7 @@ private:
 
     // Declare booleans
     bool paused;
+    bool take_screenshot { false };
 
     // Name entry for a new highscore
     asw::ui::Root ui;

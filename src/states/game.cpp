@@ -254,25 +254,8 @@ void GameScene::update(float deltaTime)
 
     // Screenshot
     if (get_action_down(controls::SCREENSHOT)) {
-        // Count screenshots
-        int screenshotNumber;
-
-        // Get current number
-        std::ifstream read("screenshots/screenshot.dat");
-        read >> screenshotNumber;
-        read.close();
-
-        // State new number
-        std::ofstream write("screenshots/screenshot.dat");
-        write << screenshotNumber + 1;
-        write.close();
-
-        // Save to file
-        // TODO
-        // al_save_bitmap((std::string("screenshots/screenshot_") +
-        //                 std::to_string(screenshotNumber).c_str() + ".png")
-        //                    .c_str(),
-        //                al_get_backbuffer(display));
+        // Saved at the end of draw, once the frame is drawn
+        take_screenshot = true;
 
         // Snap sound
         asw::sound::play(sound_snap);
@@ -408,28 +391,24 @@ void GameScene::draw()
 
     // Health bar
     const auto healthFloat = static_cast<float>(hectar.getHealth());
-    auto healthColor = asw::Color(255, 0, 0);
-    healthColor.r -= static_cast<int>(healthFloat * 2.5F);
-    healthColor.g += static_cast<int>(healthFloat * 2.5F);
+    const auto healthColor = asw::color::red.lerp(asw::color::lime, healthFloat / 100.0F);
     asw::draw::rect_fill(asw::Quad<float>(10.0F, 68.0F, healthFloat * 1.7F, 10.0F), healthColor);
 
     // Power up timers
     if (hectar.isInvincible()) {
         asw::draw::circle_fill(asw::Vec2<float>(45, 105), 20, asw::Color(255, 255, 255));
         asw::draw::sprite(powerStar, asw::Vec2<float>(20, 80));
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getInvincibleTimer()),
-            asw::Vec2<float>(44, 94), asw::Color(255, 255, 255), asw::TextJustify::Center);
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getInvincibleTimer()),
-            asw::Vec2<float>(45, 96), asw::Color(255, 0, 0), asw::TextJustify::Center);
+        asw::draw::text_shadow(orbitron_24, std::format("{:.0f}", hectar.getInvincibleTimer()),
+            asw::Vec2<float>(45, 96), asw::color::red, asw::color::white,
+            asw::Vec2<float>(-1, -2), asw::TextJustify::Center);
     }
 
     if (hectar.isMagnetic()) {
         asw::draw::circle_fill(asw::Vec2<float>(175, 105), 20, asw::Color(255, 255, 255));
         asw::draw::sprite(powerMagnet[0], asw::Vec2<float>(150, 80));
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getMagneticTimer()),
-            asw::Vec2<float>(174, 94), asw::Color(255, 255, 255), asw::TextJustify::Center);
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getMagneticTimer()),
-            asw::Vec2<float>(175, 96), asw::Color(255, 0, 0), asw::TextJustify::Center);
+        asw::draw::text_shadow(orbitron_24, std::format("{:.0f}", hectar.getMagneticTimer()),
+            asw::Vec2<float>(175, 96), asw::color::red, asw::color::white,
+            asw::Vec2<float>(-1, -2), asw::TextJustify::Center);
     }
 
     // Draw the debug window
@@ -597,5 +576,23 @@ void GameScene::draw()
         asw::draw::text(orbitron_18, "Quit", asw::Vec2<float>(220, 445), asw::Color(0, 0, 0));
         asw::draw::text(orbitron_18, "Main Menu", asw::Vec2<float>(300, 445), asw::Color(0, 0, 0));
         asw::draw::text(orbitron_18, "Resume", asw::Vec2<float>(470, 445), asw::Color(0, 0, 0));
+    }
+
+    // Screenshot of the finished frame
+    if (take_screenshot) {
+        take_screenshot = false;
+
+        // Count screenshots
+        int screenshotNumber = 0;
+        std::ifstream read("assets/screenshots/screenshot.dat");
+        read >> screenshotNumber;
+        read.close();
+
+        std::ofstream write("assets/screenshots/screenshot.dat");
+        write << screenshotNumber + 1;
+        write.close();
+
+        asw::display::screenshot(
+            std::format("assets/screenshots/screenshot_{}.png", screenshotNumber));
     }
 }
