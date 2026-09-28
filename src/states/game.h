@@ -91,9 +91,9 @@ private:
     // Declare booleans
     bool paused;
 
-    // Text input
-    std::string edittext;
-    std::string::iterator iter;
+    // Name entry for a new highscore
+    asw::ui::Root ui;
+    asw::ui::InputBox* name_input { nullptr };
 
     // Containers of objects
     std::vector<Energy> energys;

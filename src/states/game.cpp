@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include <cctype>
 #include <format>
 #include <fstream>
 
@@ -21,9 +22,30 @@ void GameScene::init()
     arrow_animation = 0.0F;
     paused = false;
 
-    // End game menu
-    edittext = "Player";
-    iter = edittext.end();
+    // End game name entry, hidden until a new highscore
+    if (name_input == nullptr) {
+        ui.set_size(S_W_F, S_H_F);
+        ui.root.bg = asw::color::transparent;
+        ui.ctx.theme.input_bg = asw::color::white;
+        ui.ctx.theme.text = asw::color::black;
+        ui.ctx.theme.btn_bg = asw::color::black;
+        ui.ctx.theme.btn_hover = asw::color::black;
+
+        name_input = &ui.root.add_child<asw::ui::InputBox>();
+        name_input->font = orbitron_24;
+        name_input->transform = asw::Quad<float>(122, 390, 0, 40);
+
+        // Names are saved space separated, so no spaces, and at most 14 characters
+        name_input->on_change = [this](const std::string& value) {
+            std::string name = value;
+            std::erase_if(name, [](unsigned char c) { return std::isspace(c) != 0; });
+            name_input->value = name.substr(0, 14);
+        };
+    }
+
+    name_input->value = "Player";
+    name_input->visible = false;
+    ui.validate();
 
     // Reset stats
     for (int i = 0; i < 4; i++) {
@@ -218,36 +240,14 @@ void GameScene::update(float deltaTime)
         // Lose scripts
         if (hectar.isOnGround()) {
             // Name input
-            if (score > highscores.getScore(9) && asw::input::get_keyboard().any_pressed) {
-                // Last key pressed
-                int newkey = asw::input::get_keyboard().last_pressed;
-
-                // Letters
-                if (newkey >= SDL_SCANCODE_A && newkey <= SDL_SCANCODE_Z
-                    && edittext.length() < 14) {
-                    iter = edittext.insert(
-                        iter, newkey + 96 - (asw::input::get_keyboard().down[SDL_SCANCODE_LSHIFT] * 32));
-                    ++iter;
-                }
-                // Numbers
-                else if (newkey >= SDL_SCANCODE_0 && newkey <= SDL_SCANCODE_9
-                    && edittext.length() < 14) {
-                    iter = edittext.insert(iter, newkey + 21);
-                    ++iter;
-                }
-                // Some other, "special" key was pressed, handle it here
-                else if (newkey == SDL_SCANCODE_BACKSPACE && iter != edittext.begin()) {
-                    --iter;
-                    iter = edittext.erase(iter);
-                } else if (newkey == SDL_SCANCODE_RIGHT && iter != edittext.end()) {
-                    ++iter;
-                } else if (newkey == SDL_SCANCODE_LEFT && iter != edittext.begin()) {
-                    --iter;
-                }
-            }
+            name_input->visible = score > highscores.getScore(9);
+            name_input->transform.size.x
+                = static_cast<float>(asw::util::get_text_size(orbitron_24, name_input->value).x)
+                + 14.0F;
+            ui.update();
 
             if (get_action_down(controls::CONFIRM)) {
-                highscores.add(edittext, score);
+                highscores.add(name_input->value, score);
                 manager.set_next_scene(Scenes::Menu);
             }
         }
@@ -553,39 +553,12 @@ void GameScene::draw()
             asw::Vec2<float>(130, 285), asw::Color(0, 0, 0));
 
         if (score > highscores.getScore(9)) {
-            // Input rectangle
-            asw::draw::rect_fill(
-                asw::Quad<float>(
-                    120, 388, asw::util::get_text_size(orbitron_24, edittext.c_str()).x + 18, 44),
-                asw::Color(0, 0, 0));
-            asw::draw::rect_fill(
-                asw::Quad<float>(
-                    122, 390, asw::util::get_text_size(orbitron_24, edittext.c_str()).x + 14, 40),
-                asw::Color(255, 255, 255));
+            // Input box
+            ui.draw();
 
             // Textbox lable
             asw::draw::text(
                 orbitron_18, "Enter your name:", asw::Vec2<float>(129, 370), asw::Color(0, 0, 0));
-
-            // Output the string to the screen
-            asw::draw::text(
-                orbitron_24, edittext, asw::Vec2<float>(130, 390), asw::Color(255, 255, 255));
-
-            // Draw the caret
-            asw::draw::line(
-                asw::Vec2<float>(
-                    asw::util::get_text_size(orbitron_24,
-                        edittext.substr(0, std::distance(edittext.begin(), iter)).c_str())
-                            .x
-                        + 130,
-                    392),
-                asw::Vec2<float>(
-                    asw::util::get_text_size(orbitron_24,
-                        edittext.substr(0, std::distance(edittext.begin(), iter)).c_str())
-                            .x
-                        + 130,
-                    428),
-                asw::Color(0, 0, 0));
 
             // Draw the congrats message
             asw::draw::text(
