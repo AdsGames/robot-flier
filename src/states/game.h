@@ -8,6 +8,7 @@
 
 #include <asw/asw.h>
 
+#include "../constants/controls.h"
 #include "../constants/globals.h"
 #include "../entities/debris.h"
 #include "../entities/energy.h"
@@ -78,21 +79,23 @@ private:
     // Our robot
     Robot hectar;
 
+    // Shakes the world, the HUD stays still
+    asw::Camera camera;
+
     // Declare integers
     float scroll;
     int themeNumber;
-    int screenshake_x;
-    int screenshake_y;
     float arrow_animation;
     float motion;
     float ticker;
 
     // Declare booleans
     bool paused;
+    bool take_screenshot { false };
 
-    // Text input
-    std::string edittext;
-    std::string::iterator iter;
+    // Name entry for a new highscore
+    asw::ui::Root ui;
+    asw::ui::InputBox* name_input { nullptr };
 
     // Containers of objects
     std::vector<Energy> energys;

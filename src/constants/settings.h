@@ -54,14 +54,6 @@ public:
     void applyFullscreen() const;
     void apply() const;
 
-    // Cycling helpers for the options menu
-    void cycleParticleType();
-    void cycleSound();
-    void cycleMusic();
-    void cycleFullscreen();
-    void cycleScreenShake();
-    void cycleControlMode();
-
     // Convenience queries
     bool particlesEnabled() const
     {

@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include "../constants/controls.h"
 #include "../constants/globals.h"
 #include "state.h"
 

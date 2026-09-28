@@ -17,8 +17,9 @@ public:
     // Logic override
     void logic(const float motion, Robot* robot);
 
-    // Draw override
-    void draw() override;
+    // Draw through the camera
+    using asw::game::GameObject::draw;
+    void draw(const asw::Camera& camera) const;
 
     // Move towards robot
     void moveTowards(const asw::Vec2<float>& target, const float speed);

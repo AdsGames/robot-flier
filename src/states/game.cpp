@@ -1,5 +1,7 @@
 #include "game.h"
 
+#include <cctype>
+#include <cmath>
 #include <format>
 #include <fstream>
 
@@ -16,14 +18,34 @@ void GameScene::init()
     scroll = 0;
     motion = 5;
     themeNumber = 0;
-    screenshake_x = 0;
-    screenshake_y = 0;
+    camera = asw::Camera(asw::Vec2<float>(S_W_F, S_H_F));
     arrow_animation = 0.0F;
     paused = false;
 
-    // End game menu
-    edittext = "Player";
-    iter = edittext.end();
+    // End game name entry, hidden until a new highscore
+    if (name_input == nullptr) {
+        auto& input_style = ui.ctx.theme.input;
+        input_style.bg = asw::color::white;
+        input_style.border = asw::color::black;
+        input_style.border_hover = asw::color::black;
+        input_style.text = asw::color::black;
+        input_style.caret = asw::color::black;
+
+        name_input = &ui.root.add_child<asw::ui::InputBox>();
+        name_input->font = orbitron_24;
+        name_input->transform = asw::Quad<float>(122, 390, 0, 40);
+
+        // Names are saved space separated, so no spaces, and at most 14 characters
+        name_input->on_change = [this](const std::string& value) {
+            std::string name = value;
+            std::erase_if(name, [](unsigned char c) { return std::isspace(c) != 0; });
+            name_input->value = name.substr(0, 14);
+        };
+    }
+
+    name_input->value = "Player";
+    name_input->visible = false;
+    ui.clear_focus();
 
     // Reset stats
     for (int i = 0; i < 4; i++) {
@@ -218,79 +240,46 @@ void GameScene::update(float deltaTime)
         // Lose scripts
         if (hectar.isOnGround()) {
             // Name input
-            if (score > highscores.getScore(9) && asw::input::keyboard.any_pressed) {
-                // Last key pressed
-                int newkey = asw::input::keyboard.last_pressed;
+            name_input->visible = score > highscores.getScore(9);
 
-                // Letters
-                if (newkey >= SDL_SCANCODE_A && newkey <= SDL_SCANCODE_Z
-                    && edittext.length() < 14) {
-                    iter = edittext.insert(
-                        iter, newkey + 96 - (asw::input::keyboard.down[SDL_SCANCODE_LSHIFT] * 32));
-                    ++iter;
-                }
-                // Numbers
-                else if (newkey >= SDL_SCANCODE_0 && newkey <= SDL_SCANCODE_9
-                    && edittext.length() < 14) {
-                    iter = edittext.insert(iter, newkey + 21);
-                    ++iter;
-                }
-                // Some other, "special" key was pressed, handle it here
-                else if (newkey == SDL_SCANCODE_BACKSPACE && iter != edittext.begin()) {
-                    --iter;
-                    iter = edittext.erase(iter);
-                } else if (newkey == SDL_SCANCODE_RIGHT && iter != edittext.end()) {
-                    ++iter;
-                } else if (newkey == SDL_SCANCODE_LEFT && iter != edittext.begin()) {
-                    --iter;
-                }
+            // Nothing has focus by default, the box takes the typing
+            if (name_input->visible && ui.ctx.focus.focused() != name_input) {
+                ui.focus(*name_input);
             }
 
-            if (get_key(Key::Return) || get_controller_button(0, ControllerButton::Start)
-                || get_controller_button(0, ControllerButton::A)) {
-                highscores.add(edittext, score);
+            name_input->transform.size.x
+                = static_cast<float>(asw::util::get_text_size(orbitron_24, name_input->value).x)
+                + 14.0F;
+            ui.update();
+
+            if (get_action_down(controls::CONFIRM)) {
+                highscores.add(name_input->value, score);
                 manager.set_next_scene(Scenes::Menu);
             }
         }
     }
 
     // Screenshot
-    if (get_key_down(Key::F11) || get_controller_button_down(0, ControllerButton::Y)) {
-        // Count screenshots
-        int screenshotNumber;
-
-        // Get current number
-        std::ifstream read("screenshots/screenshot.dat");
-        read >> screenshotNumber;
-        read.close();
-
-        // State new number
-        std::ofstream write("screenshots/screenshot.dat");
-        write << screenshotNumber + 1;
-        write.close();
-
-        // Save to file
-        // TODO
-        // al_save_bitmap((std::string("screenshots/screenshot_") +
-        //                 std::to_string(screenshotNumber).c_str() + ".png")
-        //                    .c_str(),
-        //                al_get_backbuffer(display));
+    if (get_action_down(controls::SCREENSHOT)) {
+        // Saved at the end of draw, once the frame is drawn
+        take_screenshot = true;
 
         // Snap sound
         asw::sound::play(sound_snap);
     }
 
-    // Screen shake
-    if (screenshake > 0 && settings.screenshakeMultiplier() != 0) {
-        const auto shake_amount = screenshake * settings.screenshakeMultiplier()
-            + 100 * static_cast<int>(settings.supershake);
-
-        screenshake_x = screenshake_y = asw::random::between(-shake_amount, shake_amount);
-        screenshake--;
+    // Screen shake, fades by the multiplier every frame at 60 fps
+    const auto shake_multiplier = static_cast<float>(settings.screenshakeMultiplier());
+    if (screenshake > 0 && shake_multiplier > 0 && hectar.isAlive()) {
+        camera.set_shake_decay(60.0F * shake_multiplier);
+        camera.shake(screenshake * shake_multiplier + (settings.supershake ? 100.0F : 0.0F));
     }
+    screenshake = 0;
 
-    if (screenshake <= 0 || !hectar.isAlive()) {
-        screenshake_x = screenshake_y = 0;
+    if (hectar.isAlive()) {
+        camera.update(deltaTime);
+    } else {
+        camera.snap_to(asw::Vec2<float>(S_W_F, S_H_F) / 2.0F);
     }
 
     // Random test stuff for devs
@@ -299,7 +288,7 @@ void GameScene::update(float deltaTime)
             score += 10;
         }
 
-        if (get_key(Key::E) || get_controller_button(0, ControllerButton::B)) {
+        if (get_key(Key::E) || get_controller_button(ANY_CONTROLLER, ControllerButton::B)) {
             hectar.addHealth(1);
         }
 
@@ -309,8 +298,7 @@ void GameScene::update(float deltaTime)
     }
 
     // Pause loop code
-    if (get_key_down(Key::Escape) || get_mouse_button_down(MouseButton::Right)
-        || get_key_down(Key::Space) || get_controller_button_down(0, ControllerButton::Start)) {
+    if (get_action_down(controls::PAUSE)) {
         if (paused) {
             paused = false;
         } else if (hectar.isAlive()) {
@@ -326,17 +314,17 @@ void GameScene::update(float deltaTime)
 
         if (get_mouse_button_down(MouseButton::Left)) {
             // Quit game
-            if (quitQuad.contains(mouse.position)) {
-                asw::core::exit = true;
+            if (quitQuad.contains(get_mouse().position)) {
+                asw::core::exit();
             }
 
             // Menu
-            if (menuQuad.contains(mouse.position)) {
+            if (menuQuad.contains(get_mouse().position)) {
                 manager.set_next_scene(Scenes::Menu);
             }
 
             // Resume
-            if (resumeQuad.contains(mouse.position)) {
+            if (resumeQuad.contains(get_mouse().position)) {
                 paused = false;
             }
         }
@@ -397,8 +385,8 @@ void GameScene::draw()
     using namespace asw::input;
 
     // Draw backgrounds and Ground Overlay
-    asw::draw::sprite(space, asw::Vec2<float>(scroll / 6, 0));
-    asw::draw::sprite(space, asw::Vec2<float>(scroll / 6 + SCREEN_W, 0));
+    asw::draw::sprite(space, camera.world_to_screen(asw::Vec2<float>(scroll / 6, 0)));
+    asw::draw::sprite(space, camera.world_to_screen(asw::Vec2<float>(scroll / 6 + SCREEN_W, 0)));
 
     // Draw HUD
     // Info
@@ -410,28 +398,24 @@ void GameScene::draw()
 
     // Health bar
     const auto healthFloat = static_cast<float>(hectar.getHealth());
-    auto healthColor = asw::Color(255, 0, 0);
-    healthColor.r -= static_cast<int>(healthFloat * 2.5F);
-    healthColor.g += static_cast<int>(healthFloat * 2.5F);
+    const auto healthColor = asw::color::red.lerp(asw::color::lime, healthFloat / 100.0F);
     asw::draw::rect_fill(asw::Quad<float>(10.0F, 68.0F, healthFloat * 1.7F, 10.0F), healthColor);
 
     // Power up timers
     if (hectar.isInvincible()) {
         asw::draw::circle_fill(asw::Vec2<float>(45, 105), 20, asw::Color(255, 255, 255));
         asw::draw::sprite(powerStar, asw::Vec2<float>(20, 80));
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getInvincibleTimer()),
-            asw::Vec2<float>(44, 94), asw::Color(255, 255, 255), asw::TextJustify::Center);
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getInvincibleTimer()),
-            asw::Vec2<float>(45, 96), asw::Color(255, 0, 0), asw::TextJustify::Center);
+        asw::draw::text_shadow(orbitron_24, std::format("{:.0f}", hectar.getInvincibleTimer()),
+            asw::Vec2<float>(45, 96), asw::color::red, asw::color::white,
+            asw::Vec2<float>(-1, -2), asw::TextJustify::Center);
     }
 
     if (hectar.isMagnetic()) {
         asw::draw::circle_fill(asw::Vec2<float>(175, 105), 20, asw::Color(255, 255, 255));
         asw::draw::sprite(powerMagnet[0], asw::Vec2<float>(150, 80));
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getMagneticTimer()),
-            asw::Vec2<float>(174, 94), asw::Color(255, 255, 255), asw::TextJustify::Center);
-        asw::draw::text(orbitron_24, std::format("{:.0f}", hectar.getMagneticTimer()),
-            asw::Vec2<float>(175, 96), asw::Color(255, 0, 0), asw::TextJustify::Center);
+        asw::draw::text_shadow(orbitron_24, std::format("{:.0f}", hectar.getMagneticTimer()),
+            asw::Vec2<float>(175, 96), asw::color::red, asw::color::white,
+            asw::Vec2<float>(-1, -2), asw::TextJustify::Center);
     }
 
     // Draw the debug window
@@ -455,9 +439,9 @@ void GameScene::draw()
             asw::Color(255, 255, 255));
         asw::draw::text(orbitron_12, std::format("Magnetic:{}", hectar.getMagneticTimer()),
             asw::Vec2<float>(120, 35), asw::Color(255, 255, 255));
-        asw::draw::text(orbitron_12, std::format("Mouse X:{}", mouse.position.x),
+        asw::draw::text(orbitron_12, std::format("Mouse X:{}", get_mouse().position.x),
             asw::Vec2<float>(120, 45), asw::Color(255, 255, 255));
-        asw::draw::text(orbitron_12, std::format("Mouse Y:{}", mouse.position.y),
+        asw::draw::text(orbitron_12, std::format("Mouse Y:{}", get_mouse().position.y),
             asw::Vec2<float>(120, 55), asw::Color(255, 255, 255));
         asw::draw::text(orbitron_12,
             std::format("Particles On:{}", static_cast<int>(settings.particleType)),
@@ -476,7 +460,7 @@ void GameScene::draw()
             asw::Vec2<float>(245, 65), asw::Color(255, 255, 255));
 
         // Column 4
-        asw::draw::text(orbitron_12, std::format("Last key:{}", keyboard.last_pressed),
+        asw::draw::text(orbitron_12, std::format("Last key:{}", get_keyboard().last_pressed),
             asw::Vec2<float>(360, 25), asw::Color(255, 255, 255));
         asw::draw::text(orbitron_12,
             std::format("Has highscore:{}", score > highscores.getScore(9)),
@@ -491,52 +475,56 @@ void GameScene::draw()
     const auto scroll_int = static_cast<int>(scroll);
 
     // Mountain Paralax
-    asw::draw::sprite(parallaxBack, asw::Vec2<float>((scroll_int / 3) % SCREEN_W, 0));
-    asw::draw::sprite(parallaxBack, asw::Vec2<float>((scroll_int / 3) % SCREEN_W + SCREEN_W, 0));
+    asw::draw::sprite(
+        parallaxBack, camera.world_to_screen(asw::Vec2<float>((scroll_int / 3) % SCREEN_W, 0)));
+    asw::draw::sprite(parallaxBack,
+        camera.world_to_screen(asw::Vec2<float>((scroll_int / 3) % SCREEN_W + SCREEN_W, 0)));
 
     // Ground
-    asw::draw::sprite(groundUnderlay, asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 40));
-    asw::draw::sprite(
-        groundUnderlay, asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 40));
+    asw::draw::sprite(groundUnderlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 40)));
+    asw::draw::sprite(groundUnderlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 40)));
 
     // Energy
     for (auto& energy : energys) {
-        energy.draw();
+        energy.draw(camera);
     }
 
     // Powerups
     for (auto& powerup : powerups) {
-        powerup.draw();
+        powerup.draw(camera);
     }
 
     // Draw robot
-    hectar.draw();
+    hectar.draw(camera);
 
     // Start arrow
     if (!hectar.hasBegun()) {
         if (asw::input::get_controller_count() > 0) {
             asw::draw::sprite(ui_a,
-                hectar.getTransform().position
-                    + asw::Vec2<float>(15, -60 - (sinf(arrow_animation) * 10)));
+                camera.world_to_screen(hectar.getTransform().position
+                    + asw::Vec2<float>(15, -60 - (sinf(arrow_animation) * 10))));
         } else {
             asw::draw::sprite(ui_up,
-                hectar.getTransform().position
-                    + asw::Vec2<float>(15, -70 - (sinf(arrow_animation) * 10)));
+                camera.world_to_screen(hectar.getTransform().position
+                    + asw::Vec2<float>(15, -70 - (sinf(arrow_animation) * 10))));
         }
     }
 
     // Debris
     for (auto& debris : debries) {
-        debris.draw();
+        debris.draw(camera);
     }
 
     // Ground underlay
-    asw::draw::sprite(groundOverlay, asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 20));
-    asw::draw::sprite(
-        groundOverlay, asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 20));
+    asw::draw::sprite(groundOverlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W, SCREEN_H - 20)));
+    asw::draw::sprite(groundOverlay,
+        camera.world_to_screen(asw::Vec2<float>(scroll_int % SCREEN_W + SCREEN_W, SCREEN_H - 20)));
 
     // Robot above asteroids
-    hectar.drawOverlay();
+    hectar.drawOverlay(camera);
 
     // Lose scripts
     if (hectar.isOnGround()) {
@@ -555,39 +543,12 @@ void GameScene::draw()
             asw::Vec2<float>(130, 285), asw::Color(0, 0, 0));
 
         if (score > highscores.getScore(9)) {
-            // Input rectangle
-            asw::draw::rect_fill(
-                asw::Quad<float>(
-                    120, 388, asw::util::get_text_size(orbitron_24, edittext.c_str()).x + 18, 44),
-                asw::Color(0, 0, 0));
-            asw::draw::rect_fill(
-                asw::Quad<float>(
-                    122, 390, asw::util::get_text_size(orbitron_24, edittext.c_str()).x + 14, 40),
-                asw::Color(255, 255, 255));
+            // Input box
+            ui.draw();
 
             // Textbox lable
             asw::draw::text(
                 orbitron_18, "Enter your name:", asw::Vec2<float>(129, 370), asw::Color(0, 0, 0));
-
-            // Output the string to the screen
-            asw::draw::text(
-                orbitron_24, edittext, asw::Vec2<float>(130, 390), asw::Color(255, 255, 255));
-
-            // Draw the caret
-            asw::draw::line(
-                asw::Vec2<float>(
-                    asw::util::get_text_size(orbitron_24,
-                        edittext.substr(0, std::distance(edittext.begin(), iter)).c_str())
-                            .x
-                        + 130,
-                    392),
-                asw::Vec2<float>(
-                    asw::util::get_text_size(orbitron_24,
-                        edittext.substr(0, std::distance(edittext.begin(), iter)).c_str())
-                            .x
-                        + 130,
-                    428),
-                asw::Color(0, 0, 0));
 
             // Draw the congrats message
             asw::draw::text(
@@ -622,5 +583,23 @@ void GameScene::draw()
         asw::draw::text(orbitron_18, "Quit", asw::Vec2<float>(220, 445), asw::Color(0, 0, 0));
         asw::draw::text(orbitron_18, "Main Menu", asw::Vec2<float>(300, 445), asw::Color(0, 0, 0));
         asw::draw::text(orbitron_18, "Resume", asw::Vec2<float>(470, 445), asw::Color(0, 0, 0));
+    }
+
+    // Screenshot of the finished frame
+    if (take_screenshot) {
+        take_screenshot = false;
+
+        // Count screenshots
+        int screenshotNumber = 0;
+        std::ifstream read("assets/screenshots/screenshot.dat");
+        read >> screenshotNumber;
+        read.close();
+
+        std::ofstream write("assets/screenshots/screenshot.dat");
+        write << screenshotNumber + 1;
+        write.close();
+
+        asw::display::screenshot(
+            std::format("assets/screenshots/screenshot_{}.png", screenshotNumber));
     }
 }

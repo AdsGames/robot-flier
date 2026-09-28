@@ -9,8 +9,8 @@ Debris::Debris(asw::Texture sprite, asw::Sample sound, const asw::Vec2<float>& p
     , motionMultiplier(motionMultiplier)
     , acceleration(acceleration)
     , damage(damage)
-    , sound(sound)
     , texture(sprite)
+    , sound(sound)
 {
     transform.position = position;
 
@@ -61,9 +61,9 @@ void Debris::logic(const float motion, Robot* robot, const float deltaTime)
     }
 }
 
-void Debris::draw()
+void Debris::draw(const asw::Camera& camera) const
 {
     if (this->alive) {
-        asw::draw::stretch_sprite(texture, transform);
+        asw::draw::stretch_sprite(texture, camera.world_to_screen(transform));
     }
 }

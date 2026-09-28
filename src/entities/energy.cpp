@@ -35,16 +35,15 @@ void Energy::logic(const float motion, Robot* robot)
     }
 }
 
-void Energy::draw()
+void Energy::draw(const asw::Camera& camera) const
 {
     if (this->alive) {
-        asw::draw::sprite(texture, transform.position);
+        asw::draw::sprite(texture, camera.world_to_screen(transform.position));
     }
 }
 
 // Move towards robot
 void Energy::moveTowards(const asw::Vec2<float>& target, const float speed)
 {
-    transform.position.x += (speed * (target.x - transform.position.x)) / 200.0F;
-    transform.position.y += (speed * (target.y - transform.position.y)) / 200.0F;
+    transform.position = asw::util::lerp(transform.position, target, speed / 200.0F);
 }

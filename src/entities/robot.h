@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 
+#include "../constants/controls.h"
 #include "../constants/globals.h"
 
 class Robot {
@@ -17,8 +18,8 @@ public:
     Robot(const asw::Vec2<float>& position);
 
     void logic(float deltaTime);
-    void draw();
-    void drawOverlay();
+    void draw(const asw::Camera& camera);
+    void drawOverlay(const asw::Camera& camera);
 
     // Getters
     int getHealth() const;

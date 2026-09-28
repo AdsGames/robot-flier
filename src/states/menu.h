@@ -6,11 +6,11 @@
  */
 #pragma once
 
-#include <array>
 #include <asw/asw.h>
 #include <time.h>
 #include <vector>
 
+#include "../constants/controls.h"
 #include "../constants/globals.h"
 #include "score_table.h"
 #include "state.h"
@@ -34,6 +34,18 @@ public:
     void draw() override;
 
 private:
+    // Build the menu and options ui, once per scene
+    void build_ui();
+
+    // Match the options widgets to the settings
+    void sync_options();
+
+    // Change mini screen, main menu gets focus back on start
+    void open_screen(int screen);
+
+    // Start the closing animation, then the game
+    void start_game();
+
     // Score table
     ScoreTable highscores;
 
@@ -54,28 +66,31 @@ private:
     asw::game::Sprite credits;
     asw::game::Sprite highscores_table;
 
-    // Buttons
-    asw::game::Sprite start;
+    // Title
     asw::game::Sprite title;
-    asw::game::Sprite highscores_button;
 
     // Start button for xbox control
     asw::game::Sprite xbox_start;
 
-    // Options menu
-    std::array<asw::game::Sprite, 2> ui_sound;
-    std::array<asw::game::Sprite, 2> ui_music;
-    std::array<asw::game::Sprite, 4> ui_screenshake;
-    std::array<asw::game::Sprite, 2> ui_window;
-    std::array<asw::game::Sprite, 4> ui_particle;
-    std::array<asw::game::Sprite, 3> ui_control;
+    // Main menu buttons
+    asw::ui::Root menu_ui;
+    asw::ui::Button* start { nullptr };
+    asw::ui::Button* highscores_button { nullptr };
+    asw::ui::Button* ui_credits { nullptr };
+    asw::ui::Button* ui_controls { nullptr };
+    asw::ui::Button* ui_help { nullptr };
+    asw::ui::Button* ui_options { nullptr };
 
-    asw::game::Sprite ui_options;
-    asw::game::Sprite ui_back;
-    asw::game::Sprite ui_credits;
-    asw::game::Sprite ui_exit;
-    asw::game::Sprite ui_help;
-    asw::game::Sprite ui_controls;
+    // Options menu
+    asw::ui::Root options_ui;
+    asw::ui::Checkbox* ui_sound { nullptr };
+    asw::ui::Checkbox* ui_music { nullptr };
+    asw::ui::Checkbox* ui_window { nullptr };
+    asw::ui::Choice* ui_particle { nullptr };
+    asw::ui::Choice* ui_screenshake { nullptr };
+    asw::ui::Choice* ui_control { nullptr };
+    asw::ui::Button* ui_exit { nullptr };
+    asw::ui::Button* ui_back { nullptr };
 
     // Music
     asw::Music music_mainmenu;

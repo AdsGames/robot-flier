@@ -18,8 +18,9 @@ public:
     // Logic override
     void logic(const float motion, Robot* robot);
 
-    // Draw override
-    void draw() override;
+    // Draw through the camera
+    using asw::game::GameObject::draw;
+    void draw(const asw::Camera& camera) const;
 
 private:
     int type;

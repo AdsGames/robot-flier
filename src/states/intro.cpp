@@ -14,7 +14,8 @@ void IntroScene::update(float deltaTime)
     timer += deltaTime;
 
     // Go to menu
-    if (timer >= 3.0F || asw::input::keyboard.any_pressed) {
+    if (timer >= 3.0F || asw::input::get_keyboard().any_pressed
+        || asw::input::get_action_down(controls::CONFIRM)) {
         manager.set_next_scene(Scenes::Menu);
     }
 }
