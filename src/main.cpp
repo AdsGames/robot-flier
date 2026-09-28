@@ -6,6 +6,7 @@
  */
 #include <asw/asw.h>
 
+#include "./constants/controls.h"
 #include "./constants/globals.h"
 #include "./constants/settings.h"
 #include "./states/game.h"
@@ -21,6 +22,7 @@ int main(int argc, char* argv[])
 
     asw::core::init(SCREEN_W, SCREEN_H, 1);
     asw::core::print_info();
+    controls::bind();
 
     // Starts Game
     auto app = asw::scene::SceneManager<Scenes>();

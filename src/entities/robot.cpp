@@ -110,10 +110,7 @@ void Robot::logic(float deltaTime)
     // Moving controls
     if (alive) {
         // Controls movement up and down
-        if ((asw::input::get_key(asw::input::Key::W) || asw::input::get_key(asw::input::Key::Up)
-                || asw::input::get_mouse_button(asw::input::MouseButton::Left))
-            || asw::input::get_controller_button(0, asw::input::ControllerButton::A)
-            || asw::input::get_controller_button(0, asw::input::ControllerButton::LeftPaddle1)) {
+        if (asw::input::get_action(controls::FLY)) {
             keyPressed = true;
 
             if (asw::random::chance(0.2F)) {

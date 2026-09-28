@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 
+#include "../constants/controls.h"
 #include "../constants/globals.h"
 
 class Robot {

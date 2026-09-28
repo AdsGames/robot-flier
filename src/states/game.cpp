@@ -246,8 +246,7 @@ void GameScene::update(float deltaTime)
                 }
             }
 
-            if (get_key(Key::Return) || get_controller_button(0, ControllerButton::Start)
-                || get_controller_button(0, ControllerButton::A)) {
+            if (get_action_down(controls::CONFIRM)) {
                 highscores.add(edittext, score);
                 manager.set_next_scene(Scenes::Menu);
             }
@@ -255,7 +254,7 @@ void GameScene::update(float deltaTime)
     }
 
     // Screenshot
-    if (get_key_down(Key::F11) || get_controller_button_down(0, ControllerButton::Y)) {
+    if (get_action_down(controls::SCREENSHOT)) {
         // Count screenshots
         int screenshotNumber;
 
@@ -299,7 +298,7 @@ void GameScene::update(float deltaTime)
             score += 10;
         }
 
-        if (get_key(Key::E) || get_controller_button(0, ControllerButton::B)) {
+        if (get_key(Key::E) || get_controller_button(ANY_CONTROLLER, ControllerButton::B)) {
             hectar.addHealth(1);
         }
 
@@ -309,8 +308,7 @@ void GameScene::update(float deltaTime)
     }
 
     // Pause loop code
-    if (get_key_down(Key::Escape) || get_mouse_button_down(MouseButton::Right)
-        || get_key_down(Key::Space) || get_controller_button_down(0, ControllerButton::Start)) {
+    if (get_action_down(controls::PAUSE)) {
         if (paused) {
             paused = false;
         } else if (hectar.isAlive()) {

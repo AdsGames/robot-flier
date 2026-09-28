@@ -8,6 +8,7 @@
 
 #include <asw/asw.h>
 
+#include "../constants/controls.h"
 #include "../constants/globals.h"
 #include "../entities/debris.h"
 #include "../entities/energy.h"

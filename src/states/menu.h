@@ -11,6 +11,7 @@
 #include <time.h>
 #include <vector>
 
+#include "../constants/controls.h"
 #include "../constants/globals.h"
 #include "score_table.h"
 #include "state.h"

@@ -165,16 +165,15 @@ void MenuScene::update(float deltaTime)
         || mini_screen == MINISTATE_CONTROLS || mini_screen == MINISTATE_SCORES) {
         if (asw::input::get_keyboard().any_pressed
             || asw::input::get_mouse_button_down(asw::input::MouseButton::Left)
-            || asw::input::get_controller_button_down(0, asw::input::ControllerButton::A)) {
+            || asw::input::get_action_down(controls::CONFIRM)) {
             mini_screen = MINISTATE_MENU;
         }
     }
 
     // Open submenu or start game
-    if (mini_screen == MINISTATE_MENU) {
-        // Start game with controller
-        if (asw::input::get_controller_button_down(0, asw::input::ControllerButton::Start)
-            || asw::input::get_controller_button_down(0, asw::input::ControllerButton::A)) {
+    else if (mini_screen == MINISTATE_MENU) {
+        // Start game with keyboard or controller
+        if (asw::input::get_action_down(controls::CONFIRM)) {
             startClicked = true;
             animation_ticker = ANIMATION_DURATION;
         }
