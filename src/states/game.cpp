@@ -24,12 +24,12 @@ void GameScene::init()
 
     // End game name entry, hidden until a new highscore
     if (name_input == nullptr) {
-        ui.set_size(S_W_F, S_H_F);
-        ui.root.bg = asw::color::transparent;
-        ui.ctx.theme.input_bg = asw::color::white;
-        ui.ctx.theme.text = asw::color::black;
-        ui.ctx.theme.btn_bg = asw::color::black;
-        ui.ctx.theme.btn_hover = asw::color::black;
+        auto& input_style = ui.ctx.theme.input;
+        input_style.bg = asw::color::white;
+        input_style.border = asw::color::black;
+        input_style.border_hover = asw::color::black;
+        input_style.text = asw::color::black;
+        input_style.caret = asw::color::black;
 
         name_input = &ui.root.add_child<asw::ui::InputBox>();
         name_input->font = orbitron_24;
@@ -45,7 +45,7 @@ void GameScene::init()
 
     name_input->value = "Player";
     name_input->visible = false;
-    ui.validate();
+    ui.clear_focus();
 
     // Reset stats
     for (int i = 0; i < 4; i++) {
@@ -241,6 +241,12 @@ void GameScene::update(float deltaTime)
         if (hectar.isOnGround()) {
             // Name input
             name_input->visible = score > highscores.getScore(9);
+
+            // Nothing has focus by default, the box takes the typing
+            if (name_input->visible && ui.ctx.focus.focused() != name_input) {
+                ui.focus(*name_input);
+            }
+
             name_input->transform.size.x
                 = static_cast<float>(asw::util::get_text_size(orbitron_24, name_input->value).x)
                 + 14.0F;

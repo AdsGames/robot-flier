@@ -99,6 +99,9 @@ void MenuScene::build_ui()
         return &toggle;
     };
 
+    menu_ui.ctx.navigation = controls::ui_navigation();
+    options_ui.ctx.navigation = controls::ui_navigation();
+
     // Main menu, positions animate in update
     menu_ui.set_size(S_W_F, S_H_F);
     menu_ui.root.bg = asw::color::transparent;
@@ -219,8 +222,7 @@ void MenuScene::open_screen(int screen)
 
     // So Return and A start the game again
     if (screen == MINISTATE_MENU) {
-        menu_ui.validate();
-        menu_ui.ctx.focus.set_focus(menu_ui.ctx, start);
+        menu_ui.focus(*start);
     }
 }
 
@@ -265,11 +267,11 @@ void MenuScene::update(float deltaTime)
     }
     // Main menu, Return and controller A activate the focused button
     else if (mini_screen == MINISTATE_MENU) {
-        controls::update_ui(menu_ui);
+        menu_ui.update();
     }
     // Options
     else if (mini_screen == MINISTATE_OPTIONS) {
-        controls::update_ui(options_ui);
+        options_ui.update();
     }
 
     // Update mouse particles
